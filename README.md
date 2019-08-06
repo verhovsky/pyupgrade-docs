@@ -1,4 +1,4 @@
-<!-- [![Build Status](https://travis-ci.org/asottile/blacken-docs.svg?branch=master)](https://travis-ci.org/asottile/blacken-docs)
+<!-- TODO: [![Build Status](https://travis-ci.org/asottile/blacken-docs.svg?branch=master)](https://travis-ci.org/asottile/blacken-docs)
 [![Coverage Status](https://coveralls.io/repos/github/asottile/blacken-docs/badge.svg?branch=master)](https://coveralls.io/github/asottile/blacken-docs?branch=master) -->
 
 pyupgrade-docs
@@ -56,5 +56,4 @@ Sample `.pre-commit-config.yaml`:
     rev: v0.1.0
     hooks:
     -   id: pyupgrade-docs
-        additional_dependencies: [pyupgrade]
 ```
