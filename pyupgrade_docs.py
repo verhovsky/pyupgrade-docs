@@ -2,6 +2,7 @@ import argparse
 import contextlib
 import re
 import textwrap
+import tempfile
 from typing import Generator
 from typing import List
 from typing import Match
@@ -10,7 +11,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-import black
+import pyupgrade
 
 
 MD_RE = re.compile(
@@ -38,8 +39,21 @@ class CodeBlockError(NamedTuple):
     exc: Exception
 
 
+def _format_str(contents_text, args):  # type: (str, argparse.Namespace) -> int
+    contents_text = pyupgrade._fix_py2_compatible(contents_text)
+    contents_text = pyupgrade._fix_tokens(contents_text, args.py3_plus)
+    if not args.keep_percent_format:
+        contents_text = pyupgrade._fix_percent_format(contents_text)
+    if args.py3_plus:
+        contents_text = pyupgrade._fix_py3_plus(contents_text)
+    if args.py36_plus:
+        contents_text = pyupgrade._fix_fstrings(contents_text)
+
+    return contents_text
+
+
 def format_str(
-    src: str, black_mode: black.FileMode
+    src: str, args: argparse.Namespace
 ) -> Tuple[str, Sequence[CodeBlockError]]:
     errors: List[CodeBlockError] = []
 
@@ -53,7 +67,7 @@ def format_str(
     def _md_match(match: Match[str]) -> str:
         code = textwrap.dedent(match["code"])
         with _collect_error(match):
-            code = black.format_str(code, mode=black_mode)
+            code = _format_str(code, args=args)
         code = textwrap.indent(code, match["indent"])
         return f'{match["before"]}{code}{match["after"]}'
 
@@ -64,7 +78,7 @@ def format_str(
         trailing_ws = trailing_ws_match.group()
         code = textwrap.dedent(match["code"])
         with _collect_error(match):
-            code = black.format_str(code, mode=black_mode)
+            code = _format_str(code, args=args)
         code = textwrap.indent(code, min_indent)
         return f'{match["before"]}{code.rstrip()}{trailing_ws}'
 
@@ -73,10 +87,10 @@ def format_str(
     return src, errors
 
 
-def format_file(filename: str, black_mode: black.FileMode, skip_errors: bool) -> int:
+def format_file(filename: str, args: argparse.Namespace, skip_errors: bool) -> int:
     with open(filename, encoding="UTF-8") as f:
         contents = f.read()
-    new_contents, errors = format_str(contents, black_mode)
+    new_contents, errors = format_str(contents, args)
     for error in errors:
         lineno = contents[: error.offset].count("\n") + 1
         print(f"{filename}:{lineno}: code block parse error {error.exc}")
@@ -93,32 +107,22 @@ def format_file(filename: str, black_mode: black.FileMode, skip_errors: bool) ->
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-l", "--line-length", type=int, default=black.DEFAULT_LINE_LENGTH
-    )
-    parser.add_argument(
-        "-t",
-        "--target-version",
-        action="append",
-        type=lambda v: black.TargetVersion[v.upper()],
-        default=[],
-        help=f"choices: {[v.name.lower() for v in black.TargetVersion]}",
-        dest="target_versions",
-    )
-    parser.add_argument("-S", "--skip-string-normalization", action="store_true")
-    parser.add_argument("-E", "--skip-errors", action="store_true")
     parser.add_argument("filenames", nargs="*")
+
+    # parser.add_argument('--exit-zero-even-if-changed', action='store_true')
+    parser.add_argument("--keep-percent-format", action="store_true")
+    parser.add_argument("--py3-plus", "--py3-only", action="store_true")
+    parser.add_argument("--py36-plus", action="store_true")
+
+    parser.add_argument("-E", "--skip-errors", action="store_true")
     args = parser.parse_args(argv)
 
-    black_mode = black.FileMode(
-        target_versions=args.target_versions,
-        line_length=args.line_length,
-        string_normalization=not args.skip_string_normalization,
-    )
+    if args.py36_plus:
+        args.py3_plus = True
 
     retv = 0
     for filename in args.filenames:
-        retv |= format_file(filename, black_mode, skip_errors=args.skip_errors)
+        retv |= format_file(filename, args, skip_errors=args.skip_errors)
     return retv
 
 
