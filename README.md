@@ -1,32 +1,32 @@
-[![Build Status](https://travis-ci.org/asottile/blacken-docs.svg?branch=master)](https://travis-ci.org/asottile/blacken-docs)
-[![Coverage Status](https://coveralls.io/repos/github/asottile/blacken-docs/badge.svg?branch=master)](https://coveralls.io/github/asottile/blacken-docs?branch=master)
+<!-- [![Build Status](https://travis-ci.org/asottile/blacken-docs.svg?branch=master)](https://travis-ci.org/asottile/blacken-docs)
+[![Coverage Status](https://coveralls.io/repos/github/asottile/blacken-docs/badge.svg?branch=master)](https://coveralls.io/github/asottile/blacken-docs?branch=master) -->
 
-blacken-docs
+pyupgrade-docs
 ============
 
-Run `black` on python code blocks in documentation files.
+Run `pyupgrade` on python code blocks in documentation files.
 
 ## install
 
-`pip install blacken-docs`
+`pip install pyupgrade-docs  # TODO`
 
 ## usage
 
-`blacken-docs` provides a single executable (`blacken-docs`) which will modify
+`pyupgrade-docs` provides a single executable (`pyupgrade-docs`) which will modify
 `.rst` / `.md` files in place.
 
-It currently supports the following [`black`](https://github.com/ambv/black)
+It currently supports the following [`pyupgrade`](https://github.com/asottile/pyupgrade)
 options:
 
-- `-l` / `--line-length`
-- `-t` / `--target-version`
-- `-S` / `--skip-string-normalization`
+- `--keep-percent-format`
+- `--py3-plus` `--py3-only`
+- `--py36-plus`
 
 Following additional parameters can be used:
 
  - `-E` / `--skip-errors`
 
-`blacken-docs` will format code in the following block types:
+`pyupgrade-docs` will format code in the following block types:
 
 (markdown)
 ```markdown
@@ -52,12 +52,9 @@ Sample `.pre-commit-config.yaml`:
 
 
 ```yaml
--   repo: https://github.com/asottile/blacken-docs
-    rev: v1.3.0
+-   repo: https://github.com/verhovsky/pyupgrade-docs
+    rev: v0.1.0
     hooks:
-    -   id: blacken-docs
-        additional_dependencies: [black==...]
+    -   id: pyupgrade-docs
+        additional_dependencies: [pyupgrade]
 ```
-
-Since `black` is currently a moving target, it is suggested to pin `black`
-to a specific version using `additional_dependencies`.

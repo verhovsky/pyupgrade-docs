@@ -1,7 +1,7 @@
--   id: blacken-docs
-    name: blacken-docs
-    description: Run `black` on python code blocks in documentation files
-    entry: blacken-docs
+-   id: pyupgrade-docs
+    name: pyupgrade-docs
+    description: Run `pyupgrade` on python code blocks in documentation files
+    entry: pyupgrade-docs
     language: python
     language_version: python3
     files: '\.(rst|md|markdown)$'
