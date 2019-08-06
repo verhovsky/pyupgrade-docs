@@ -8,7 +8,7 @@ Run `pyupgrade` on python code blocks in documentation files.
 
 ## install
 
-`pip install pyupgrade-docs  # TODO`
+`pip install pyupgrade-docs`
 
 ## usage
 
