@@ -14,23 +14,23 @@ import black
 
 
 MD_RE = re.compile(
-    r'(?P<before>^(?P<indent> *)```python\n)'
-    r'(?P<code>.*?)'
-    r'(?P<after>^(?P=indent)```\s*$)',
+    r"(?P<before>^(?P<indent> *)```python\n)"
+    r"(?P<code>.*?)"
+    r"(?P<after>^(?P=indent)```\s*$)",
     re.DOTALL | re.MULTILINE,
 )
-PY_LANGS = '(python|py|sage|python3|py3|numpy)'
+PY_LANGS = "(python|py|sage|python3|py3|numpy)"
 RST_RE = re.compile(
-    rf'(?P<before>'
-    rf'^(?P<indent> *)\.\. (code|code-block|sourcecode|ipython):: {PY_LANGS}\n'
-    rf'((?P=indent) +:.*\n)*'
-    rf'\n*'
-    rf')'
-    rf'(?P<code>(^((?P=indent) +.*)?\n)+)',
+    rf"(?P<before>"
+    rf"^(?P<indent> *)\.\. (code|code-block|sourcecode|ipython):: {PY_LANGS}\n"
+    rf"((?P=indent) +:.*\n)*"
+    rf"\n*"
+    rf")"
+    rf"(?P<code>(^((?P=indent) +.*)?\n)+)",
     re.MULTILINE,
 )
-INDENT_RE = re.compile('^ +(?=[^ ])', re.MULTILINE)
-TRAILING_NL_RE = re.compile(r'\n+\Z', re.MULTILINE)
+INDENT_RE = re.compile("^ +(?=[^ ])", re.MULTILINE)
+TRAILING_NL_RE = re.compile(r"\n+\Z", re.MULTILINE)
 
 
 class CodeBlockError(NamedTuple):
@@ -39,7 +39,7 @@ class CodeBlockError(NamedTuple):
 
 
 def format_str(
-        src: str, black_mode: black.FileMode,
+    src: str, black_mode: black.FileMode
 ) -> Tuple[str, Sequence[CodeBlockError]]:
     errors: List[CodeBlockError] = []
 
@@ -51,18 +51,18 @@ def format_str(
             errors.append(CodeBlockError(match.start(), e))
 
     def _md_match(match: Match[str]) -> str:
-        code = textwrap.dedent(match['code'])
+        code = textwrap.dedent(match["code"])
         with _collect_error(match):
             code = black.format_str(code, mode=black_mode)
-        code = textwrap.indent(code, match['indent'])
+        code = textwrap.indent(code, match["indent"])
         return f'{match["before"]}{code}{match["after"]}'
 
     def _rst_match(match: Match[str]) -> str:
-        min_indent = min(INDENT_RE.findall(match['code']))
-        trailing_ws_match = TRAILING_NL_RE.search(match['code'])
+        min_indent = min(INDENT_RE.findall(match["code"]))
+        trailing_ws_match = TRAILING_NL_RE.search(match["code"])
         assert trailing_ws_match
         trailing_ws = trailing_ws_match.group()
-        code = textwrap.dedent(match['code'])
+        code = textwrap.dedent(match["code"])
         with _collect_error(match):
             code = black.format_str(code, mode=black_mode)
         code = textwrap.indent(code, min_indent)
@@ -73,20 +73,18 @@ def format_str(
     return src, errors
 
 
-def format_file(
-        filename: str, black_mode: black.FileMode, skip_errors: bool,
-) -> int:
-    with open(filename, encoding='UTF-8') as f:
+def format_file(filename: str, black_mode: black.FileMode, skip_errors: bool) -> int:
+    with open(filename, encoding="UTF-8") as f:
         contents = f.read()
     new_contents, errors = format_str(contents, black_mode)
     for error in errors:
-        lineno = contents[:error.offset].count('\n') + 1
-        print(f'{filename}:{lineno}: code block parse error {error.exc}')
+        lineno = contents[: error.offset].count("\n") + 1
+        print(f"{filename}:{lineno}: code block parse error {error.exc}")
     if errors and not skip_errors:
         return 1
     if contents != new_contents:
-        print(f'{filename}: Rewriting...')
-        with open(filename, 'w', encoding='UTF-8') as f:
+        print(f"{filename}: Rewriting...")
+        with open(filename, "w", encoding="UTF-8") as f:
             f.write(new_contents)
         return 1
     else:
@@ -96,22 +94,20 @@ def format_file(
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        '-l', '--line-length', type=int, default=black.DEFAULT_LINE_LENGTH,
+        "-l", "--line-length", type=int, default=black.DEFAULT_LINE_LENGTH
     )
     parser.add_argument(
-        '-t',
-        '--target-version',
-        action='append',
+        "-t",
+        "--target-version",
+        action="append",
         type=lambda v: black.TargetVersion[v.upper()],
         default=[],
-        help=f'choices: {[v.name.lower() for v in black.TargetVersion]}',
-        dest='target_versions',
+        help=f"choices: {[v.name.lower() for v in black.TargetVersion]}",
+        dest="target_versions",
     )
-    parser.add_argument(
-        '-S', '--skip-string-normalization', action='store_true',
-    )
-    parser.add_argument('-E', '--skip-errors', action='store_true')
-    parser.add_argument('filenames', nargs='*')
+    parser.add_argument("-S", "--skip-string-normalization", action="store_true")
+    parser.add_argument("-E", "--skip-errors", action="store_true")
+    parser.add_argument("filenames", nargs="*")
     args = parser.parse_args(argv)
 
     black_mode = black.FileMode(
@@ -126,5 +122,5 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     return retv
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     exit(main())
