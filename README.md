@@ -96,10 +96,10 @@ Sample `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/verhovsky/pyupgrade-docs
-    rev: v0.2.0
+    rev: v0.2.1
     hooks:
-        additional_dependencies: [pyupgrade==...]
     -   id: pyupgrade-docs
+        additional_dependencies: [pyupgrade==...]
 ```
 
 Since `pyupgrade` is currently a moving target, it is suggested to pin `pyupgrade`
