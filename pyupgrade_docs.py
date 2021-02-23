@@ -2,6 +2,8 @@ import argparse
 import contextlib
 import re
 import textwrap
+import tempfile
+from copy import deepcopy
 from typing import Generator
 from typing import List
 from typing import Match
@@ -10,7 +12,7 @@ from typing import Optional
 from typing import Sequence
 from typing import Tuple
 
-import black
+import pyupgrade._main
 
 
 MD_RE = re.compile(
@@ -66,8 +68,21 @@ class CodeBlockError(NamedTuple):
     exc: Exception
 
 
+def _format_str(contents_text: str, args: argparse.Namespace) -> str:
+    TMP_FILE_NAME = "/tmp/pyupgrade_docs_cache"
+    with open(TMP_FILE_NAME, "w") as f:
+        f.write(contents_text)
+
+    new_args = deepcopy(args)
+    new_args.filenames = [TMP_FILE_NAME]  # Just to be safe
+    pyupgrade._main._fix_file(TMP_FILE_NAME, new_args)
+
+    with open(TMP_FILE_NAME) as f:
+        return f.read()
+
+
 def format_str(
-        src: str, black_mode: black.FileMode,
+        src: str, args: argparse.Namespace
 ) -> Tuple[str, Sequence[CodeBlockError]]:
     errors: List[CodeBlockError] = []
 
@@ -81,7 +96,7 @@ def format_str(
     def _md_match(match: Match[str]) -> str:
         code = textwrap.dedent(match['code'])
         with _collect_error(match):
-            code = black.format_str(code, mode=black_mode)
+            code = _format_str(code, args=args)
         code = textwrap.indent(code, match['indent'])
         return f'{match["before"]}{code}{match["after"]}'
 
@@ -92,7 +107,7 @@ def format_str(
         trailing_ws = trailing_ws_match.group()
         code = textwrap.dedent(match['code'])
         with _collect_error(match):
-            code = black.format_str(code, mode=black_mode)
+            code = _format_str(code, args=args)
         code = textwrap.indent(code, min_indent)
         return f'{match["before"]}{code.rstrip()}{trailing_ws}'
 
@@ -106,22 +121,14 @@ def format_str(
 
             if fragment is not None:
                 with _collect_error(match):
-                    fragment = black.format_str(fragment, mode=black_mode)
+                    fragment = _format_str(fragment, args=args)
                 fragment_lines = fragment.splitlines()
                 code += f'{PYCON_PREFIX}{fragment_lines[0]}\n'
                 for line in fragment_lines[1:]:
-                    # Skip blank lines to handle Black adding a blank above
-                    # functions within blocks. A blank line would end the REPL
-                    # continuation prompt.
-                    #
-                    # >>> if True:
-                    # ...     def f():
-                    # ...         pass
-                    # ...
                     if line:
                         code += f'{PYCON_CONTINUATION_PREFIX} {line}\n'
-                if fragment_lines[-1].startswith(' '):
-                    code += f'{PYCON_CONTINUATION_PREFIX}\n'
+                    else:
+                        code += f'{PYCON_CONTINUATION_PREFIX}\n'
                 fragment = None
 
         indentation = None
@@ -147,7 +154,7 @@ def format_str(
     def _latex_match(match: Match[str]) -> str:
         code = textwrap.dedent(match['code'])
         with _collect_error(match):
-            code = black.format_str(code, mode=black_mode)
+            code = _format_str(code, args=args)
         code = textwrap.indent(code, match['indent'])
         return f'{match["before"]}{code}{match["after"]}'
 
@@ -160,11 +167,11 @@ def format_str(
 
 
 def format_file(
-        filename: str, black_mode: black.FileMode, skip_errors: bool,
+        filename: str, args: argparse.Namespace, skip_errors: bool
 ) -> int:
     with open(filename, encoding='UTF-8') as f:
         contents = f.read()
-    new_contents, errors = format_str(contents, black_mode)
+    new_contents, errors = format_str(contents, args)
     for error in errors:
         lineno = contents[:error.offset].count('\n') + 1
         print(f'{filename}:{lineno}: code block parse error {error.exc}')
@@ -181,34 +188,42 @@ def format_file(
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = argparse.ArgumentParser()
+    parser.add_argument('--exit-zero-even-if-changed', action='store_true')
+    parser.add_argument('--keep-percent-format', action='store_true')
+    parser.add_argument('--keep-mock', action='store_true')
+    parser.add_argument('--keep-runtime-typing', action='store_true')
     parser.add_argument(
-        '-l', '--line-length', type=int, default=black.DEFAULT_LINE_LENGTH,
+        '--py3-plus', '--py3-only',
+        action='store_const', dest='min_version', default=(2, 7), const=(3,),
     )
     parser.add_argument(
-        '-t',
-        '--target-version',
-        action='append',
-        type=lambda v: black.TargetVersion[v.upper()],
-        default=[],
-        help=f'choices: {[v.name.lower() for v in black.TargetVersion]}',
-        dest='target_versions',
+        '--py36-plus',
+        action='store_const', dest='min_version', const=(3, 6),
     )
     parser.add_argument(
-        '-S', '--skip-string-normalization', action='store_true',
+        '--py37-plus',
+        action='store_const', dest='min_version', const=(3, 7),
     )
+    parser.add_argument(
+        '--py38-plus',
+        action='store_const', dest='min_version', const=(3, 8),
+    )
+    parser.add_argument(
+        '--py39-plus',
+        action='store_const', dest='min_version', const=(3, 9),
+    )
+    parser.add_argument(
+        '--py310-plus',
+        action='store_const', dest='min_version', const=(3, 10),
+    )
+
     parser.add_argument('-E', '--skip-errors', action='store_true')
     parser.add_argument('filenames', nargs='*')
     args = parser.parse_args(argv)
 
-    black_mode = black.FileMode(
-        target_versions=args.target_versions,
-        line_length=args.line_length,
-        string_normalization=not args.skip_string_normalization,
-    )
-
     retv = 0
     for filename in args.filenames:
-        retv |= format_file(filename, black_mode, skip_errors=args.skip_errors)
+        retv |= format_file(filename, args, skip_errors=args.skip_errors)
     return retv
 
 

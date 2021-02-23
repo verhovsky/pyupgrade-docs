@@ -15,6 +15,15 @@ Run `pyupgrade` on python code blocks in documentation files.
 It currently supports the following [`pyupgrade`](https://github.com/asottile/pyupgrade)
 options:
 
+- `--keep-percent-format`
+- `--keep-mock`
+- `--keep-runtime-typing`
+- `--py3-plus` `--py3-only`
+- `--py36-plus`
+- `--py37-plus`
+- `--py38-plus`
+- `--py39-plus`
+- `--py310-plus`
 
 The following additional parameters can be used:
 
