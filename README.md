@@ -1,33 +1,26 @@
-[![Build Status](https://dev.azure.com/asottile/asottile/_apis/build/status/asottile.blacken-docs?branchName=master)](https://dev.azure.com/asottile/asottile/_build/latest?definitionId=36&branchName=master)
-[![Azure DevOps coverage](https://img.shields.io/azure-devops/coverage/asottile/asottile/36/master.svg)](https://dev.azure.com/asottile/asottile/_build/latest?definitionId=36&branchName=master)
-[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/asottile/blacken-docs/master.svg)](https://results.pre-commit.ci/latest/github/asottile/blacken-docs/master)
-
-blacken-docs
+pyupgrade-docs
 ============
 
-Run `black` on python code blocks in documentation files.
+Run `pyupgrade` on python code blocks in documentation files.
 
 ## install
 
-`pip install blacken-docs`
+`pip install pyupgrade-docs`
 
 ## usage
 
-`blacken-docs` provides a single executable (`blacken-docs`) which will modify
+`pyupgrade-docs` provides a single executable (`pyupgrade-docs`) which will modify
 `.rst` / `.md` / `.tex` files in place.
 
-It currently supports the following [`black`](https://github.com/psf/black)
+It currently supports the following [`pyupgrade`](https://github.com/asottile/pyupgrade)
 options:
 
-- `-l` / `--line-length`
-- `-t` / `--target-version`
-- `-S` / `--skip-string-normalization`
 
-Following additional parameters can be used:
+The following additional parameters can be used:
 
  - `-E` / `--skip-errors`
 
-`blacken-docs` will format code in the following block types:
+`pyupgrade-docs` will format code in the following block types:
 
 (markdown)
 ```markdown
@@ -93,12 +86,12 @@ Sample `.pre-commit-config.yaml`:
 
 
 ```yaml
--   repo: https://github.com/asottile/blacken-docs
-    rev: v1.9.2
+-   repo: https://github.com/verhovsky/pyupgrade-docs
+    rev: v0.2.0
     hooks:
-    -   id: blacken-docs
-        additional_dependencies: [black==...]
+        additional_dependencies: [pyupgrade==...]
+    -   id: pyupgrade-docs
 ```
 
-Since `black` is currently a moving target, it is suggested to pin `black`
+Since `pyupgrade` is currently a moving target, it is suggested to pin `pyupgrade`
 to a specific version using `additional_dependencies`.
