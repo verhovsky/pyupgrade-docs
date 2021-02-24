@@ -1,9 +1,12 @@
 import argparse
 import contextlib
+import io
 import re
 import textwrap
 import tempfile
+from contextlib import redirect_stderr
 from copy import deepcopy
+from pathlib import Path
 from typing import Generator
 from typing import List
 from typing import Match
@@ -69,16 +72,19 @@ class CodeBlockError(NamedTuple):
 
 
 def _format_str(contents_text: str, args: argparse.Namespace) -> str:
-    TMP_FILE_NAME = "/tmp/pyupgrade_docs_cache"
-    with open(TMP_FILE_NAME, "w") as f:
-        f.write(contents_text)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        tmpfile = Path(tmpdir) / "pyupgrade_docs_cache"
+        with open(tmpfile, "w") as f:
+            f.write(contents_text)
 
-    new_args = deepcopy(args)
-    new_args.filenames = [TMP_FILE_NAME]  # Just to be safe
-    pyupgrade._main._fix_file(TMP_FILE_NAME, new_args)
+        new_args = deepcopy(args)
+        new_args.filenames = [tmpfile]  # Just to be safe
+        with io.StringIO() as f:
+            with redirect_stderr(f):
+                pyupgrade._main._fix_file(tmpfile, new_args)
 
-    with open(TMP_FILE_NAME) as f:
-        return f.read()
+        with open(tmpfile) as f:
+            return f.read()
 
 
 def format_str(
