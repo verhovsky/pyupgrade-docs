@@ -96,7 +96,7 @@ Sample `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/verhovsky/pyupgrade-docs
-    rev: v0.2.4
+    rev: v0.2.5
     hooks:
     -   id: pyupgrade-docs
 ```
