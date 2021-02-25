@@ -96,11 +96,7 @@ Sample `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/verhovsky/pyupgrade-docs
-    rev: v0.2.3
+    rev: v0.2.4
     hooks:
     -   id: pyupgrade-docs
-        additional_dependencies: [pyupgrade==...]
 ```
-
-Since `pyupgrade` is currently a moving target, it is suggested to pin `pyupgrade`
-to a specific version using `additional_dependencies`.
